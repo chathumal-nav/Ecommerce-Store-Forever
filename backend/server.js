@@ -7,6 +7,7 @@ import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
+import helmet from "helmet";
 
 // App Config
 const app = express();
@@ -19,8 +20,23 @@ connectDB();
 connectCloudinary();
 
 // Middlewares
-app.use(express.json());
-app.use(cors());
+app.use(helmet()); // Make sure helmet is applied globally, at the very top
+
+// Add Content Security Policy with customized rules
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"], // Allow content from same origin
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts and eval (modify if needed)
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+      imgSrc: ["'self'", "data:", "https://*"], // Allow images from self and external sources
+      connectSrc: ["'self'", "https://api.yourdomain.com"], // Modify this based on your app's API endpoints
+      fontSrc: ["'self'", "https://fonts.googleapis.com"], // Allow Google Fonts (modify as needed)
+      objectSrc: ["'none'"], // Disallow plugins (e.g. Flash)
+      upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS automatically
+    },
+  })
+);
 
 // Api Endpoints
 app.use("/api/user", userRouter);
