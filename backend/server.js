@@ -23,6 +23,7 @@ connectCloudinary();
 app.use(helmet()); // Make sure helmet is applied globally, at the very top
 
 // Add Content Security Policy with customized rules
+app.use(express.json());
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
