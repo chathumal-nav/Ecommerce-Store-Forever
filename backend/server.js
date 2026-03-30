@@ -24,14 +24,15 @@ app.use(helmet()); // Make sure helmet is applied globally, at the very top
 
 // Add Content Security Policy with customized rules
 app.use(express.json());
+app.use(cors());
 app.use(
   helmet.contentSecurityPolicy({
     directives: {
-      defaultSrc: ["'self'"], // Allow content from same origin
+      defaultSrc: ["'self'"], // Allow content from same originn
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts and eval (modify if needed)
       styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
       imgSrc: ["'self'", "data:", "https://*"], // Allow images from self and external sources
-      connectSrc: ["'self'", "https://api.yourdomain.com"], // Modify this based on your app's API endpoints
+      connectSrc: ["'self'", "http://localhost:3000"], // Allow connections to the backend API
       fontSrc: ["'self'", "https://fonts.googleapis.com"], // Allow Google Fonts (modify as needed)
       objectSrc: ["'none'"], // Disallow plugins (e.g. Flash)
       upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS automatically
