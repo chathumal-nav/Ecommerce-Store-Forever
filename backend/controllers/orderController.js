@@ -7,7 +7,11 @@ const currency = "usd";
 const deliveryCharges = 10;
 
 // gateway initialize
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_API_KEY;
+if (!stripeSecretKey) {
+  throw new Error('Missing Stripe secret key. Set STRIPE_SECRET_KEY in backend/.env.');
+}
+const stripe = new Stripe(stripeSecretKey);
 
 // Placing order using COD
 const placeOrder = async (req, res) => {
