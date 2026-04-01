@@ -23,10 +23,10 @@ connectDB();
 // Connect Cloudinary
 connectCloudinary();
 
-// ✅ FIXED: Helmet WITHOUT CSP
+// Helmet WITHOUT CSP
 app.use(
   helmet({
-    contentSecurityPolicy: false, // 🔥 IMPORTANT (fixes your issue)
+    contentSecurityPolicy: false, // IMPORTANT (fixes your issue)
   })
 );
 
@@ -34,7 +34,7 @@ app.use(
 app.use(express.json());
 app.use(cors());
 
-// ✅ Session (required for OAuth)
+// Session (required for OAuth)
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -43,7 +43,7 @@ app.use(
   })
 );
 
-// ✅ Passport
+// Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -53,7 +53,7 @@ app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 
-// ✅ OAuth routes
+// OAuth routes
 app.use("/auth", authRouter);
 
 app.get("/", (req, res) => {
