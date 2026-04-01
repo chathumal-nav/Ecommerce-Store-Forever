@@ -8,8 +8,6 @@ import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import helmet from "helmet";
-
-// ADD THESE
 import session from "express-session";
 import passport from "./configs/passport.js";
 import authRouter from "./routes/authRoute.js";
@@ -23,6 +21,25 @@ connectDB();
 
 // Connect Cloudinary
 connectCloudinary();
+
+// Add Content Security Policy 
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // ajusta según tus scripts
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        connectSrc: ["'self'", "https://api.ipify.org"], // según necesites
+        frameAncestors: ["'none'"], // anti-clickjacking
+      },
+    },
+    frameguard: { action: "deny" }, // X-Frame-Options
+    noSniff: true, // X-Content-Type-Options
+  })
+);
 
 // Middlewares
 app.use(helmet()); // Make sure helmet is applied globally, at the very top
@@ -44,6 +61,7 @@ app.use(
     },
   })
 );
+
 
 // Api Endpoints
 app.use("/api/user", userRouter);
