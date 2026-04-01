@@ -19,26 +19,29 @@ connectDB();
 // Connect Cloudinary
 connectCloudinary();
 
-// Middlewares
-app.use(helmet()); // Make sure helmet is applied globally, at the very top
-
-// Add Content Security Policy with customized rules
-app.use(express.json());
-app.use(cors());
+// Add Content Security Policy 
 app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"], // Allow content from same originn
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts and eval (modify if needed)
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
-      imgSrc: ["'self'", "data:", "https://*"], // Allow images from self and external sources
-      connectSrc: ["'self'", "http://localhost:3000"], // Allow connections to the backend API
-      fontSrc: ["'self'", "https://fonts.googleapis.com"], // Allow Google Fonts (modify as needed)
-      objectSrc: ["'none'"], // Disallow plugins (e.g. Flash)
-      upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS automatically
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // ajusta según tus scripts
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        connectSrc: ["'self'", "https://api.ipify.org"], // según necesites
+        frameAncestors: ["'none'"], // anti-clickjacking
+      },
     },
+    frameguard: { action: "deny" }, // X-Frame-Options
+    noSniff: true, // X-Content-Type-Options
   })
 );
+
+// Middlewares
+app.use(express.json());
+app.use(cors());
+
 
 // Api Endpoints
 app.use("/api/user", userRouter);
