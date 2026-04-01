@@ -8,6 +8,7 @@ import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import helmet from "helmet";
+
 import session from "express-session";
 import passport from "./configs/passport.js";
 import authRouter from "./routes/authRoute.js";
@@ -22,46 +23,29 @@ connectDB();
 // Connect Cloudinary
 connectCloudinary();
 
-// Add Content Security Policy 
+// ✅ FIXED: Helmet WITHOUT CSP
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // ajusta según tus scripts
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
-        connectSrc: ["'self'", "https://api.ipify.org"], // según necesites
-        frameAncestors: ["'none'"], // anti-clickjacking
-      },
-    },
-    frameguard: { action: "deny" }, // X-Frame-Options
-    noSniff: true, // X-Content-Type-Options
+    contentSecurityPolicy: false, // 🔥 IMPORTANT (fixes your issue)
   })
 );
 
 // Middlewares
-app.use(helmet()); // Make sure helmet is applied globally, at the very top
-
-// Add Content Security Policy with customized rules
 app.use(express.json());
 app.use(cors());
+
+// ✅ Session (required for OAuth)
 app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"], // Allow content from same originn
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts and eval (modify if needed)
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
-      imgSrc: ["'self'", "data:", "https://*"], // Allow images from self and external sources
-      connectSrc: ["'self'", "http://localhost:3000"], // Allow connections to the backend API
-      fontSrc: ["'self'", "https://fonts.googleapis.com"], // Allow Google Fonts (modify as needed)
-      objectSrc: ["'none'"], // Disallow plugins (e.g. Flash)
-      upgradeInsecureRequests: [], // Upgrade HTTP requests to HTTPS automatically
-    },
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
   })
 );
 
+// ✅ Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Api Endpoints
 app.use("/api/user", userRouter);
@@ -69,7 +53,7 @@ app.use("/api/product", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 
-// ADD AUTH ROUTE (OAuth)
+// ✅ OAuth routes
 app.use("/auth", authRouter);
 
 app.get("/", (req, res) => {
