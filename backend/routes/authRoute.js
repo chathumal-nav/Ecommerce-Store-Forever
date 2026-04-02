@@ -1,5 +1,7 @@
 import express from "express";
 import passport from "passport";
+import jwt from "jsonwebtoken";
+import userModel from "../models/userModel.js";
 
 const router = express.Router();
 
@@ -15,8 +17,21 @@ router.get(
   passport.authenticate("google", {
     failureRedirect: "/login",
   }),
-  (req, res) => {
-    res.redirect("http://localhost:5173"); // frontend
+  async (req, res) => {
+    // Successful authentication, create JWT tokens and redirect with them
+    console.log("Google OAuth successful, user:", req.user);
+    console.log("User ID:", req.user._id);
+
+    const accessToken = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    // Store refresh token in database
+    req.user.refreshTokens.push(refreshToken);
+    await req.user.save();
+
+    console.log("Generated JWT tokens");
+    console.log("Redirecting to:", `http://localhost:5173?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+    res.redirect(`http://localhost:5173?accessToken=${accessToken}&refreshToken=${refreshToken}`);
   }
 );
 

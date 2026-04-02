@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import userModel from "../models/userModel.js";
 
 const authUser = async (req, res, next) => {
   const { token } = req.headers;
@@ -15,6 +16,13 @@ const authUser = async (req, res, next) => {
     req.body.userId = tokenDecode.id;
     next();
   } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.json({
+        success: false,
+        message: "Token expired",
+        code: "TOKEN_EXPIRED"
+      });
+    }
     console.log(error);
     res.json({
       success: false,

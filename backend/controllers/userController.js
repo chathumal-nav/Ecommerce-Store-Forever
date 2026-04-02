@@ -3,8 +3,12 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const createToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET);
+const createAccessToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+};
+
+const createRefreshToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 // Route for user login
@@ -24,10 +28,17 @@ const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (isMatch) {
-      const token = createToken(user._id);
+      const accessToken = createAccessToken(user._id);
+      const refreshToken = createRefreshToken(user._id);
+
+      // Store refresh token in database
+      user.refreshTokens.push(refreshToken);
+      await user.save();
+
       res.json({
         success: true,
-        token,
+        accessToken,
+        refreshToken,
       });
     } else {
       res.json({
@@ -72,12 +83,89 @@ const registerUser = async (req, res) => {
     const newUser = new userModel({ name, email, password: hashedPassword });
     const user = await newUser.save();
 
-    // generating token
-    const token = createToken(user._id);
+    // generating tokens
+    const accessToken = createAccessToken(user._id);
+    const refreshToken = createRefreshToken(user._id);
+
+    // Store refresh token in database
+    user.refreshTokens.push(refreshToken);
+    await user.save();
 
     res.json({
       success: true,
-      token,
+      accessToken,
+      refreshToken,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Route for refreshing access token
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.json({
+        success: false,
+        message: "Refresh token required",
+      });
+    }
+
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const user = await userModel.findById(decoded.id);
+
+    if (!user || !user.refreshTokens.includes(refreshToken)) {
+      return res.json({
+        success: false,
+        message: "Invalid refresh token",
+      });
+    }
+
+    // Generate new access token
+    const newAccessToken = createAccessToken(user._id);
+
+    res.json({
+      success: true,
+      accessToken: newAccessToken,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Route for user logout
+const logoutUser = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.json({
+        success: false,
+        message: "Refresh token required",
+      });
+    }
+
+    // Find user and remove refresh token
+    const user = await userModel.findOne({ refreshTokens: refreshToken });
+    if (user) {
+      user.refreshTokens = user.refreshTokens.filter(token => token !== refreshToken);
+      await user.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Logged out successfully",
     });
   } catch (error) {
     console.log(error);
@@ -97,9 +185,22 @@ const adminLogin = async (req, res) => {
       email === process.env.ADMIN_EMAIL &&
       password === process.env.ADMIN_PASSWORD
     ) {
-      const token = jwt.sign(email + password, process.env.JWT_SECRET);
+      const accessToken = jwt.sign(
+        { email, role: 'admin' },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' }
+      );
+      const refreshToken = jwt.sign(
+        { email, role: 'admin' },
+        process.env.JWT_SECRET,
+        { expiresIn: '7d' }
+      );
 
-      res.json({ success: true, token });
+      res.json({
+        success: true,
+        accessToken,
+        refreshToken,
+      });
     } else {
       res.json({
         success: false,
@@ -115,4 +216,4 @@ const adminLogin = async (req, res) => {
   }
 };
 
-export { loginUser, registerUser, adminLogin };
+export { loginUser, registerUser, adminLogin, refreshToken, logoutUser };
