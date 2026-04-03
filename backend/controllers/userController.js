@@ -35,6 +35,28 @@ const loginUser = async (req, res) => {
       user.refreshTokens.push(refreshToken);
       await user.save();
 
+      // Set cookies (will be set by route handler)
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000, // 15 minutes
+      });
+      
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      
+      res.cookie('userName', user.name, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+
       res.json({
         success: true,
         accessToken,
@@ -90,6 +112,28 @@ const registerUser = async (req, res) => {
     // Store refresh token in database
     user.refreshTokens.push(refreshToken);
     await user.save();
+
+    // Set cookies
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+    
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    res.cookie('userName', user.name, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     res.json({
       success: true,
@@ -233,4 +277,44 @@ const adminLogin = async (req, res) => {
   }
 };
 
-export { loginUser, registerUser, adminLogin, refreshToken, logoutUser };
+// Route to check authentication status from cookies
+const checkAuth = async (req, res) => {
+  try {
+    const accessToken = req.cookies.accessToken;
+    
+    if (!accessToken) {
+      return res.json({
+        success: false,
+        message: "Not authenticated",
+      });
+    }
+
+    // Verify the token
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
+    const user = await userModel.findById(decoded.id);
+
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.log("Auth check error:", error);
+    res.json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export { loginUser, registerUser, adminLogin, refreshToken, logoutUser, checkAuth };

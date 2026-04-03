@@ -26,36 +26,40 @@ const ShopContextProvider = ({ children }) => {
 
   // Check for tokens in cookies (from Google OAuth) or localStorage on mount
   useEffect(() => {
-    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
-      const [key, value] = cookie.split('=');
-      acc[key] = decodeURIComponent(value);
-      return acc;
-    }, {});
+    const checkAuthAndRestoreState = async () => {
+      try {
+        // First, try to restore from localStorage
+        const storedAccessToken = localStorage.getItem("accessToken");
+        if (storedAccessToken) {
+          setAccessToken(storedAccessToken);
+          setRefreshToken(localStorage.getItem("refreshToken") || "");
+          const savedUserName = localStorage.getItem("userName");
+          if (savedUserName) {
+            setUserName(savedUserName);
+          }
+          console.log("Tokens restored from localStorage");
+          return;
+        }
 
-    // Priority 1: Check cookies (from OAuth callback)
-    if (cookies.accessToken && cookies.refreshToken) {
-      console.log("Setting tokens from secure cookies");
-      setAccessToken(cookies.accessToken);
-      setRefreshToken(cookies.refreshToken);
-      if (cookies.userName) {
-        setUserName(cookies.userName);
+        // If no localStorage tokens, check if we have cookies from OAuth
+        // Call backend endpoint to check auth status from HTTP-only cookies
+        const response = await axios.get(backendUrl + "/api/user/check-auth", {
+          withCredentials: true,
+        });
+
+        if (response.data.success && response.data.user) {
+          console.log("Auth restored from cookies, user:", response.data.user);
+          // Tokens are in HTTP-only cookies, but we know user is authenticated
+          setAccessToken("authenticated"); // Placeholder to indicate auth state
+          setUserName(response.data.user.name);
+          localStorage.setItem("userName", response.data.user.name);
+        }
+      } catch (error) {
+        console.log("No active authentication found:", error.message);
       }
-      // Store in localStorage for persistence
-      localStorage.setItem("accessToken", cookies.accessToken);
-      localStorage.setItem("refreshToken", cookies.refreshToken);
-      if (cookies.userName) {
-        localStorage.setItem("userName", cookies.userName);
-      }
-    }
-    // Priority 2: Check localStorage as fallback
-    else if (localStorage.getItem("accessToken")) {
-      setAccessToken(localStorage.getItem("accessToken"));
-      setRefreshToken(localStorage.getItem("refreshToken") || "");
-      const savedUserName = localStorage.getItem("userName");
-      if (savedUserName) {
-        setUserName(savedUserName);
-      }
-    }
+    };
+
+    checkAuthAndRestoreState();
   }, []); // Run only once on mount
 
   // Configure axios to include credentials (cookies) in all requests
