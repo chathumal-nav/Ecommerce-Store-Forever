@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import "dotenv/config";
 import connectDB from "./configs/db.js";
 import connectCloudinary from "./configs/cloudinary.js";
@@ -58,6 +59,7 @@ app.use((req, res, next) => {
 
 // Middlewares
 app.use(express.json());
+app.use(cookieParser());
 
 // Dynamic CORS configuration - allow credentials for all local URLs in dev
 const allowedOrigins = [
