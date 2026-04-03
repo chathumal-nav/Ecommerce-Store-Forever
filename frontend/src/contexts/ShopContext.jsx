@@ -24,29 +24,44 @@ const ShopContextProvider = ({ children }) => {
   );
   const navigate = useNavigate();
 
-  // Check for tokens from Google OAuth redirect (runs once on mount)
+  // Check for tokens in cookies (from Google OAuth) or localStorage on mount
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessTokenFromUrl = urlParams.get('accessToken');
-    const refreshTokenFromUrl = urlParams.get('refreshToken');
-    const userNameFromUrl = urlParams.get('userName');
+    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
+      const [key, value] = cookie.split('=');
+      acc[key] = decodeURIComponent(value);
+      return acc;
+    }, {});
 
-    if (accessTokenFromUrl && refreshTokenFromUrl) {
-      console.log("Setting tokens from Google OAuth redirect");
-      setAccessToken(accessTokenFromUrl);
-      setRefreshToken(refreshTokenFromUrl);
-      if (userNameFromUrl) {
-        setUserName(userNameFromUrl);
+    // Priority 1: Check cookies (from OAuth callback)
+    if (cookies.accessToken && cookies.refreshToken) {
+      console.log("Setting tokens from secure cookies");
+      setAccessToken(cookies.accessToken);
+      setRefreshToken(cookies.refreshToken);
+      if (cookies.userName) {
+        setUserName(cookies.userName);
       }
-      localStorage.setItem("accessToken", accessTokenFromUrl);
-      localStorage.setItem("refreshToken", refreshTokenFromUrl);
-      if (userNameFromUrl) {
-        localStorage.setItem("userName", userNameFromUrl);
+      // Store in localStorage for persistence
+      localStorage.setItem("accessToken", cookies.accessToken);
+      localStorage.setItem("refreshToken", cookies.refreshToken);
+      if (cookies.userName) {
+        localStorage.setItem("userName", cookies.userName);
       }
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    // Priority 2: Check localStorage as fallback
+    else if (localStorage.getItem("accessToken")) {
+      setAccessToken(localStorage.getItem("accessToken"));
+      setRefreshToken(localStorage.getItem("refreshToken") || "");
+      const savedUserName = localStorage.getItem("userName");
+      if (savedUserName) {
+        setUserName(savedUserName);
+      }
     }
   }, []); // Run only once on mount
+
+  // Configure axios to include credentials (cookies) in all requests
+  useEffect(() => {
+    axios.defaults.withCredentials = true;
+  }, []);
 
   // Axios interceptor for automatic token refresh
   useEffect(() => {
@@ -108,6 +123,12 @@ const ShopContextProvider = ({ children }) => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("userName");
+    
+    // Clear secure cookies
+    document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure; samesite=lax;";
+    document.cookie = "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure; samesite=lax;";
+    document.cookie = "userName=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; secure; samesite=lax;";
+    
     navigate("/login");
   };
 

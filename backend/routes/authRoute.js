@@ -18,7 +18,7 @@ router.get(
     failureRedirect: "/login",
   }),
   async (req, res) => {
-    // Successful authentication, create JWT tokens and redirect with them
+    // Successful authentication, create JWT tokens and set secure cookies
     console.log("Google OAuth successful, user:", req.user);
     console.log("User ID:", req.user._id);
 
@@ -30,9 +30,31 @@ router.get(
     await req.user.save();
 
     console.log("Generated JWT tokens");
-    const redirectUrl = `http://localhost:5173?accessToken=${accessToken}&refreshToken=${refreshToken}&userName=${encodeURIComponent(req.user.name)}`;
-    console.log("Redirecting to:", redirectUrl);
-    res.redirect(redirectUrl);
+    
+    // Set secure HTTP-only cookies instead of URL parameters
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000, // 15 minutes
+    });
+    
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    res.cookie('userName', req.user.name, {
+      httpOnly: false, // Allow access from JavaScript
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    console.log("Cookies set, redirecting to home");
+    res.redirect('http://localhost:5173/');
   }
 );
 
