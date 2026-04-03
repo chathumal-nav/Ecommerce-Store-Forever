@@ -50,30 +50,12 @@ const Login = () => {
     window.location.href = `${backendUrl}/auth/google`;
   };
 
+  // Redirect to home if already logged in
   useEffect(() => {
-    // Check for tokens in URL params (from Google OAuth redirect) - PRIORITY
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessTokenFromUrl = urlParams.get('accessToken');
-    const refreshTokenFromUrl = urlParams.get('refreshToken');
-    console.log("Checking for tokens in URL:", accessTokenFromUrl ? "found" : "not found");
-
-    if (accessTokenFromUrl && refreshTokenFromUrl) {
-      console.log("Setting tokens from URL");
-      setToken(accessTokenFromUrl);
-      localStorage.setItem("accessToken", accessTokenFromUrl);
-      localStorage.setItem("refreshToken", refreshTokenFromUrl);
-      navigate("/");
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return; // Don't check localStorage token
-    }
-
-    // Only check localStorage token if no URL tokens
     if (token) {
-      console.log("Token exists in localStorage, navigating to home");
       navigate("/");
     }
-  }, [token, navigate, setToken]);
+  }, [token, navigate]);
 
   return (
     <form

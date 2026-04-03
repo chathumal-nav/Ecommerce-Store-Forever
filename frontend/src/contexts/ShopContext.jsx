@@ -21,6 +21,23 @@ const ShopContextProvider = ({ children }) => {
   );
   const navigate = useNavigate();
 
+  // Check for tokens from Google OAuth redirect (runs once on mount)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessTokenFromUrl = urlParams.get('accessToken');
+    const refreshTokenFromUrl = urlParams.get('refreshToken');
+
+    if (accessTokenFromUrl && refreshTokenFromUrl) {
+      console.log("Setting tokens from Google OAuth redirect");
+      setAccessToken(accessTokenFromUrl);
+      setRefreshToken(refreshTokenFromUrl);
+      localStorage.setItem("accessToken", accessTokenFromUrl);
+      localStorage.setItem("refreshToken", refreshTokenFromUrl);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []); // Run only once on mount
+
   // Axios interceptor for automatic token refresh
   useEffect(() => {
     const interceptor = axios.interceptors.response.use(
