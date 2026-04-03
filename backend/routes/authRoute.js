@@ -30,8 +30,9 @@ router.get(
     await req.user.save();
 
     console.log("Generated JWT tokens");
-    console.log("Redirecting to:", `http://localhost:5173?accessToken=${accessToken}&refreshToken=${refreshToken}`);
-    res.redirect(`http://localhost:5173?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+    const redirectUrl = `http://localhost:5173?accessToken=${accessToken}&refreshToken=${refreshToken}&userName=${encodeURIComponent(req.user.name)}`;
+    console.log("Redirecting to:", redirectUrl);
+    res.redirect(redirectUrl);
   }
 );
 

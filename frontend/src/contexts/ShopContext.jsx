@@ -19,6 +19,9 @@ const ShopContextProvider = ({ children }) => {
   const [refreshToken, setRefreshToken] = useState(
     localStorage.getItem("refreshToken") ? localStorage.getItem("refreshToken") : ""
   );
+  const [userName, setUserName] = useState(
+    localStorage.getItem("userName") ? localStorage.getItem("userName") : ""
+  );
   const navigate = useNavigate();
 
   // Check for tokens from Google OAuth redirect (runs once on mount)
@@ -26,13 +29,20 @@ const ShopContextProvider = ({ children }) => {
     const urlParams = new URLSearchParams(window.location.search);
     const accessTokenFromUrl = urlParams.get('accessToken');
     const refreshTokenFromUrl = urlParams.get('refreshToken');
+    const userNameFromUrl = urlParams.get('userName');
 
     if (accessTokenFromUrl && refreshTokenFromUrl) {
       console.log("Setting tokens from Google OAuth redirect");
       setAccessToken(accessTokenFromUrl);
       setRefreshToken(refreshTokenFromUrl);
+      if (userNameFromUrl) {
+        setUserName(userNameFromUrl);
+      }
       localStorage.setItem("accessToken", accessTokenFromUrl);
       localStorage.setItem("refreshToken", refreshTokenFromUrl);
+      if (userNameFromUrl) {
+        localStorage.setItem("userName", userNameFromUrl);
+      }
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -93,9 +103,11 @@ const ShopContextProvider = ({ children }) => {
     // Clear tokens and cart
     setAccessToken("");
     setRefreshToken("");
+    setUserName("");
     setCartItems({});
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userName");
     navigate("/login");
   };
 
@@ -223,6 +235,10 @@ const ShopContextProvider = ({ children }) => {
   }, [refreshToken]);
 
   useEffect(() => {
+    localStorage.setItem("userName", userName);
+  }, [userName]);
+
+  useEffect(() => {
     getProductsData();
   }, []);
 
@@ -252,6 +268,8 @@ const ShopContextProvider = ({ children }) => {
     setToken: setAccessToken, // Keep backward compatibility
     accessToken,
     refreshToken,
+    userName,
+    setUserName,
     logout,
   };
 

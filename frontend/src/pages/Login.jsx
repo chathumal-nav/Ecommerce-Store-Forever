@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 
 const Login = () => {
   const [currentState, setCurrentState] = useState("Sign Up");
-  const { token, navigate, backendUrl, setToken } = useContext(ShopContext);
+  const { token, navigate, backendUrl, setToken, setUserName } = useContext(ShopContext);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
@@ -21,8 +21,10 @@ const Login = () => {
         });
         if (response.data.success) {
           setToken(response.data.accessToken);
+          setUserName(name);
           localStorage.setItem("accessToken", response.data.accessToken);
           localStorage.setItem("refreshToken", response.data.refreshToken);
+          localStorage.setItem("userName", name);
         } else {
           toast.error(response.data.message);
         }
@@ -33,8 +35,10 @@ const Login = () => {
         });
         if (response.data.success) {
           setToken(response.data.accessToken);
+          setUserName(email.split("@")[0]); // Use email prefix as display name for regular login
           localStorage.setItem("accessToken", response.data.accessToken);
           localStorage.setItem("refreshToken", response.data.refreshToken);
+          localStorage.setItem("userName", email.split("@")[0]);
           navigate("/");
         } else {
           toast.error(response.data.message);

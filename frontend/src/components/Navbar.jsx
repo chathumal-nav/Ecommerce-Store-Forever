@@ -11,6 +11,7 @@ const Navbar = () => {
     navigate,
     token,
     logout,
+    userName,
   } = useContext(ShopContext);
 
   return (
@@ -54,6 +55,12 @@ const Navbar = () => {
           {token && (
             <div className="group-hover:block hidden absolute dropdown-menu right-0 pt-4">
               <div className="flex flex-col gap-2 w-36 py-3 px-5 bg-slate-100 text-gray-500 rounded">
+                {/* User info section */}
+                {userName && (
+                  <p className="cursor-pointer hover:text-black">
+                    {userName.charAt(0).toUpperCase() + userName.slice(1)}
+                  </p>
+                )}
                 {/* <p className="cursor-pointer hover:text-black">My Profile</p> */}
                 <p
                   onClick={() => navigate("/orders")}
